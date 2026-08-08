@@ -105,8 +105,13 @@
       <section id="tab-debts" class="tab-panel">
         <div class="section-actions">
           <div><h3>Мои долги</h3><p class="muted">Остаток можно корректировать по данным банка — так прогноз будет точнее.</p></div>
+          <button id="addDebtBtn" class="btn primary" type="button">+ Добавить долг</button>
         </div>
         <div id="debtsList" class="cards-grid"></div>
+        <article class="panel mt-lg">
+          <div class="panel-head"><h3>История платежей по долгам</h3><span id="debtPaymentsMonthTotal" class="badge good">0 ₽</span></div>
+          <div id="debtPaymentsHistory" class="table-wrap"></div>
+        </article>
       </section>
 
       <section id="tab-incomes" class="tab-panel">
@@ -216,7 +221,7 @@
 
   <dialog id="debtDialog" class="modal">
     <form id="debtEditForm" method="dialog" class="modal-card">
-      <div class="panel-head"><h3>Редактировать долг</h3><button class="icon-btn" value="cancel">✕</button></div>
+      <div class="panel-head"><h3 id="debtDialogTitle">Редактировать долг</h3><button class="icon-btn" value="cancel">✕</button></div>
       <input id="debtEditId" type="hidden" />
       <label class="field"><span>Название</span><input id="debtEditName" required /></label>
       <label class="field"><span>Текущий остаток</span><input id="debtEditBalance" type="number" min="0" step="0.01" required /></label>

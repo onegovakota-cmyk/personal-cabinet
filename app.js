@@ -485,17 +485,27 @@
       const email = $('#authEmail').value.trim();
       const password = $('#authPassword').value;
       $('#authSubmit').disabled = true;
+      $('#authHint').textContent = authMode === 'login' ? 'Проверяю email и пароль…' : 'Создаю аккаунт…';
+      $('#authHint').style.color = '';
       try {
         if (authMode === 'login') {
           const {error} = await sb.auth.signInWithPassword({email,password});
           if (error) throw error;
+          $('#authHint').textContent = 'Вход выполнен. Загружаю личный кабинет…';
         } else {
           const {data,error} = await sb.auth.signUp({email,password});
           if (error) throw error;
-          if (!data.session) toast('Аккаунт создан. Подтвердите email и затем войдите.');
+          if (!data.session) {
+            toast('Аккаунт создан. Подтвердите email и затем войдите.');
+            $('#authHint').textContent = 'Аккаунт создан. Проверьте почту для подтверждения email.';
+          }
         }
       } catch (err) {
-        console.error(err); toast(err.message || 'Ошибка входа','error');
+        console.error(err);
+        const message = err.message || 'Ошибка входа';
+        toast(message,'error');
+        $('#authHint').textContent = `Ошибка: ${message}`;
+        $('#authHint').style.color = '#b53f4c';
       } finally { $('#authSubmit').disabled = false; }
     });
 

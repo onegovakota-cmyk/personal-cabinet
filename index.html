@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#6f5cff" />
+  <meta name="description" content="Личный кабинет: долги, доходы, расходы, привычки и задачи" />
+  <title>Мой личный кабинет</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <section id="authView" class="auth-shell">
+    <div class="auth-card">
+      <div class="brand-mark">ЛК</div>
+      <h1>Мой личный кабинет</h1>
+      <p class="muted">Финансы, долги, привычки и задачи в одном месте.</p>
+
+      <form id="authForm" class="stack gap-md">
+        <label class="field">
+          <span>Email</span>
+          <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required />
+        </label>
+        <label class="field">
+          <span>Пароль</span>
+          <input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Минимум 6 символов" required />
+        </label>
+        <button id="authSubmit" class="btn primary" type="submit">Войти</button>
+      </form>
+
+      <button id="authModeToggle" class="btn ghost full" type="button">Создать аккаунт</button>
+      <p id="authHint" class="hint">После регистрации Supabase может попросить подтвердить email.</p>
+      <p id="configWarning" class="error hidden"></p>
+    </div>
+  </section>
+
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark small">ЛК</div>
+        <div><strong>Мой кабинет</strong><span>финансы & план</span></div>
+      </div>
+      <nav id="mainNav" class="nav-list">
+        <button class="nav-item active" data-tab="dashboard">🏠 <span>Главная</span></button>
+        <button class="nav-item" data-tab="debts">💳 <span>Долги</span></button>
+        <button class="nav-item" data-tab="incomes">💰 <span>Доходы</span></button>
+        <button class="nav-item" data-tab="expenses">🧾 <span>Расходы</span></button>
+        <button class="nav-item" data-tab="habits">✅ <span>Привычки</span></button>
+        <button class="nav-item" data-tab="tasks">📋 <span>Задачи</span></button>
+        <button class="nav-item" data-tab="settings">⚙️ <span>Настройки</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <span id="userEmail" class="small-muted"></span>
+        <button id="logoutBtn" class="btn ghost full" type="button">Выйти</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h2 id="pageTitle">Главная</h2>
+          <p id="pageSubtitle" class="muted">Ваш финансовый обзор на сегодня</p>
+        </div>
+        <div class="topbar-actions">
+          <span id="syncState" class="sync-pill">● Синхронизировано</span>
+          <button id="refreshBtn" class="icon-btn" title="Обновить">↻</button>
+        </div>
+      </header>
+
+      <section id="tab-dashboard" class="tab-panel active">
+        <div class="summary-grid">
+          <article class="summary-card income"><span>Доходы за месяц</span><strong id="sumIncome">0 ₽</strong><small id="sumIncomeHint">цель 110 000 ₽</small></article>
+          <article class="summary-card expense"><span>Расходы за месяц</span><strong id="sumExpenses">0 ₽</strong><small>без платежей по долгам</small></article>
+          <article class="summary-card debt"><span>На долги за месяц</span><strong id="sumDebtPayments">0 ₽</strong><small id="sumDebtHint">план считается автоматически</small></article>
+          <article class="summary-card balance"><span>Осталось денег</span><strong id="sumBalance">0 ₽</strong><small>доходы − расходы − долги</small></article>
+        </div>
+
+        <div class="two-col">
+          <article class="panel">
+            <div class="panel-head"><div><h3>План распределения дохода</h3><p class="muted">Сколько откладывать с каждого поступления</p></div><span id="planGapBadge" class="badge warn">—</span></div>
+            <div id="allocationPlan" class="allocation-list"></div>
+            <div class="plan-note" id="planNote"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Долги</h3><p class="muted">Цели и прогноз по текущим остаткам</p></div><button class="text-btn" data-go="debts">Открыть →</button></div>
+            <div id="dashboardDebts" class="stack gap-sm"></div>
+          </article>
+        </div>
+
+        <div class="two-col">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Сегодня</h3><p id="todayLabel" class="muted"></p></div><button class="text-btn" data-go="tasks">Все задачи →</button></div>
+            <div id="todayTasks" class="stack gap-sm"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Привычки сегодня</h3><p class="muted">Нажмите, чтобы отметить выполнение</p></div><button class="text-btn" data-go="habits">Трекер →</button></div>
+            <div id="todayHabits" class="stack gap-sm"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="tab-debts" class="tab-panel">
+        <div class="section-actions">
+          <div><h3>Мои долги</h3><p class="muted">Остаток можно корректировать по данным банка — так прогноз будет точнее.</p></div>
+        </div>
+        <div id="debtsList" class="cards-grid"></div>
+      </section>
+
+      <section id="tab-incomes" class="tab-panel">
+        <div class="two-col align-start">
+          <article class="panel">
+            <h3>Добавить доход</h3>
+            <form id="incomeForm" class="stack gap-md">
+              <label class="field"><span>Сумма</span><input id="incomeAmount" type="number" min="0.01" step="0.01" required placeholder="15000" /></label>
+              <label class="field"><span>Источник</span><select id="incomeCategory"><option>Школа</option><option>Репетиторство</option><option>Игры и материалы</option><option>Другое</option></select></label>
+              <label class="field"><span>Дата</span><input id="incomeDate" type="date" required /></label>
+              <label class="field"><span>Комментарий</span><input id="incomeNote" type="text" maxlength="120" placeholder="необязательно" /></label>
+              <button class="btn primary" type="submit">Добавить доход</button>
+            </form>
+          </article>
+
+          <article class="panel">
+            <h3>Калькулятор распределения</h3>
+            <p class="muted">Введите любое поступление — приложение покажет, сколько отложить по текущему плану.</p>
+            <label class="field"><span>Поступило</span><input id="splitAmount" type="number" min="0" step="0.01" value="15000" /></label>
+            <div id="splitPreview" class="allocation-list compact"></div>
+          </article>
+        </div>
+        <article class="panel mt-lg"><div class="panel-head"><h3>История доходов</h3><span id="incomeMonthTotal" class="badge good">0 ₽</span></div><div id="incomeHistory" class="table-wrap"></div></article>
+      </section>
+
+      <section id="tab-expenses" class="tab-panel">
+        <div class="two-col align-start">
+          <article class="panel">
+            <h3>Добавить расход</h3>
+            <form id="expenseForm" class="stack gap-md">
+              <label class="field"><span>Сумма</span><input id="expenseAmount" type="number" min="0.01" step="0.01" required placeholder="2500" /></label>
+              <label class="field"><span>Категория</span><select id="expenseCategory"><option>Продукты</option><option>Транспорт</option><option>Уход</option><option>Телефон</option><option>Подписки</option><option>Дом</option><option>Покупки</option><option>Развлечения</option><option>Другое</option></select></label>
+              <label class="field"><span>Дата</span><input id="expenseDate" type="date" required /></label>
+              <label class="field"><span>Комментарий</span><input id="expenseNote" type="text" maxlength="120" placeholder="необязательно" /></label>
+              <button class="btn primary" type="submit">Добавить расход</button>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Плановые постоянные расходы</h3><p class="muted">Используются при расчёте процентов распределения дохода.</p></div></div>
+            <div id="fixedExpensesList" class="stack gap-sm"></div>
+            <form id="fixedExpenseForm" class="inline-form mt-md">
+              <input id="fixedExpenseName" placeholder="Категория" required />
+              <input id="fixedExpenseAmount" type="number" min="0" step="0.01" placeholder="₽ / месяц" required />
+              <button class="btn secondary" type="submit">Добавить</button>
+            </form>
+          </article>
+        </div>
+        <article class="panel mt-lg"><div class="panel-head"><h3>История расходов</h3><span id="expenseMonthTotal" class="badge warn">0 ₽</span></div><div id="expenseHistory" class="table-wrap"></div></article>
+      </section>
+
+      <section id="tab-habits" class="tab-panel">
+        <div class="section-actions">
+          <div><h3>Трекер привычек</h3><p class="muted">Создавайте свои привычки и отмечайте каждый день месяца.</p></div>
+          <div class="row gap-sm"><input id="habitMonth" type="month" /><button id="addHabitBtn" class="btn primary">+ Привычка</button></div>
+        </div>
+        <div id="habitTracker" class="habit-tracker"></div>
+      </section>
+
+      <section id="tab-tasks" class="tab-panel">
+        <div class="section-actions">
+          <div><h3>Задачи на день</h3><p class="muted">Работа, репетиторство и домашние дела отдельно.</p></div>
+          <input id="taskDate" type="date" />
+        </div>
+        <form id="taskForm" class="task-add panel">
+          <input id="taskTitle" type="text" maxlength="160" placeholder="Новая задача..." required />
+          <select id="taskCategory"><option value="work">Работа</option><option value="tutoring">Репетиторство</option><option value="home">Домашние дела</option></select>
+          <button class="btn primary" type="submit">Добавить</button>
+        </form>
+        <div class="task-columns">
+          <article class="panel"><div class="panel-head"><h3>🏫 Работа</h3><span id="count-work" class="badge">0</span></div><div id="tasks-work" class="stack gap-sm"></div></article>
+          <article class="panel"><div class="panel-head"><h3>📚 Репетиторство</h3><span id="count-tutoring" class="badge">0</span></div><div id="tasks-tutoring" class="stack gap-sm"></div></article>
+          <article class="panel"><div class="panel-head"><h3>🏠 Домашние дела</h3><span id="count-home" class="badge">0</span></div><div id="tasks-home" class="stack gap-sm"></div></article>
+        </div>
+      </section>
+
+      <section id="tab-settings" class="tab-panel">
+        <div class="two-col align-start">
+          <article class="panel">
+            <h3>Финансовые настройки</h3>
+            <form id="settingsForm" class="stack gap-md">
+              <label class="field"><span>Средний доход в месяц</span><input id="monthlyIncomeTarget" type="number" min="0" step="100" /></label>
+              <p class="hint">От этой суммы рассчитываются проценты, которые стоит откладывать с каждого дохода.</p>
+              <button class="btn primary" type="submit">Сохранить</button>
+            </form>
+          </article>
+          <article class="panel">
+            <h3>Важно о расчётах</h3>
+            <div class="info-box">
+              <p><strong>Автокредит:</strong> прогноз использует текущий остаток, ставку и срок цели. Фактический график банка может отличаться из-за даты списания, начисления процентов и правил досрочного погашения.</p>
+              <p><strong>Кредитка:</strong> пока ставка не указана, расчёт идёт без процентов. Укажите APR в карточке долга, когда узнаете её.</p>
+              <p><strong>Остаток долга:</strong> после платежа приложение уменьшает его на сумму платежа. Периодически сверяйте и корректируйте остаток по приложению банка.</p>
+            </div>
+          </article>
+        </div>
+        <article class="panel mt-lg danger-zone"><h3>Аккаунт</h3><p class="muted">Данные хранятся в Supabase и защищены вашим входом.</p><button id="logoutBtn2" class="btn danger" type="button">Выйти из аккаунта</button></article>
+      </section>
+    </main>
+
+    <nav class="mobile-nav">
+      <button class="nav-item active" data-tab="dashboard">🏠<span>Главная</span></button>
+      <button class="nav-item" data-tab="debts">💳<span>Долги</span></button>
+      <button class="nav-item" data-tab="incomes">💰<span>Доходы</span></button>
+      <button class="nav-item" data-tab="expenses">🧾<span>Расходы</span></button>
+      <button class="nav-item" data-tab="tasks">📋<span>Задачи</span></button>
+    </nav>
+  </div>
+
+  <dialog id="debtDialog" class="modal">
+    <form id="debtEditForm" method="dialog" class="modal-card">
+      <div class="panel-head"><h3>Редактировать долг</h3><button class="icon-btn" value="cancel">✕</button></div>
+      <input id="debtEditId" type="hidden" />
+      <label class="field"><span>Название</span><input id="debtEditName" required /></label>
+      <label class="field"><span>Текущий остаток</span><input id="debtEditBalance" type="number" min="0" step="0.01" required /></label>
+      <label class="field"><span>Ставка, % годовых</span><input id="debtEditApr" type="number" min="0" step="0.01" /></label>
+      <label class="field"><span>Минимальный платёж в месяц</span><input id="debtEditMin" type="number" min="0" step="0.01" /></label>
+      <label class="field"><span>Целевая дата закрытия</span><input id="debtEditTarget" type="date" /></label>
+      <label class="field"><span>Приоритет (1 — самый высокий)</span><input id="debtEditPriority" type="number" min="1" max="20" step="1" /></label>
+      <div class="row gap-sm justify-end"><button class="btn ghost" value="cancel">Отмена</button><button id="saveDebtBtn" class="btn primary" type="submit" value="default">Сохранить</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="paymentDialog" class="modal">
+    <form id="paymentForm" method="dialog" class="modal-card">
+      <div class="panel-head"><h3>Записать платёж</h3><button class="icon-btn" value="cancel">✕</button></div>
+      <input id="paymentDebtId" type="hidden" />
+      <p id="paymentDebtName" class="muted"></p>
+      <label class="field"><span>Сумма платежа</span><input id="paymentAmount" type="number" min="0.01" step="0.01" required /></label>
+      <label class="field"><span>Дата</span><input id="paymentDate" type="date" required /></label>
+      <label class="field"><span>Комментарий</span><input id="paymentNote" maxlength="120" placeholder="например: досрочный платёж" /></label>
+      <div class="row gap-sm justify-end"><button class="btn ghost" value="cancel">Отмена</button><button class="btn primary" type="submit" value="default">Сохранить</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="habitDialog" class="modal">
+    <form id="habitForm" method="dialog" class="modal-card">
+      <div class="panel-head"><h3>Новая привычка</h3><button class="icon-btn" value="cancel">✕</button></div>
+      <label class="field"><span>Название</span><input id="habitName" maxlength="80" placeholder="Например: читать 20 минут" required /></label>
+      <div class="row gap-sm justify-end"><button class="btn ghost" value="cancel">Отмена</button><button class="btn primary" type="submit" value="default">Добавить</button></div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

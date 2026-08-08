@@ -1,0 +1,13 @@
+{
+  "name": "Мой личный кабинет",
+  "short_name": "Личный кабинет",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#6f5cff",
+  "description": "Личный кабинет для долгов, доходов, расходов, привычек и задач",
+  "icons": [
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
